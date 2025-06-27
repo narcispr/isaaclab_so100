@@ -38,7 +38,7 @@ from isaaclab.sim.schemas.schemas_cfg import RigidBodyPropertiesCfg
 from isaaclab.sim.spawners.from_files.from_files_cfg import UsdFileCfg
 from isaaclab.markers import VisualizationMarkersCfg
 
-from isaaclab_so100.tasks.manager_based.isaaclab_so100.so_100_robot_cfg import SO100_CFG  # isort: skip
+from isaaclab_so100.tasks.manager_based.isaaclab_so100.so100_robot_cfg import SO100_CFG  # isort: skip
 
 
 @configclass
