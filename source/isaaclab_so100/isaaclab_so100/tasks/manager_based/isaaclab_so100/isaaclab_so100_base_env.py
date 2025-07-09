@@ -59,7 +59,7 @@ from isaaclab.envs import ManagerBasedRLEnv
 from isaaclab_so100.tasks.manager_based.isaaclab_so100.so100_scene_cfg import SO100SceneCfg
 import isaaclab_so100.tasks.manager_based.isaaclab_so100.mdp.observations as so100_observations
 import isaaclab_so100.tasks.manager_based.isaaclab_so100.mdp.rewards as so100_rewards
-# import isaaclab_so100.tasks.manager_based.isaaclab_so100.mdp.terminations as so100_terminations
+import isaaclab_so100.tasks.manager_based.isaaclab_so100.mdp.terminations as so100_terminations
 
 
 # Just for runnit here:
@@ -136,20 +136,23 @@ class RewardsCfg:
     """Reward terms for the MDP."""
 
     # Reaching reward with lower weight
-    reaching_object = RewTerm(func=so100_rewards.object_ee_distance, params={"std": 0.05}, weight=2)
+    reaching_object = RewTerm(func=so100_rewards.ee_to_object_distance, params={"std": 0.05}, weight=50.0)
 
     # Lifting reward with higher weight
-    lifting_object = RewTerm(func=so100_rewards.object_is_lifted, params={"minimal_height": 0.02}, weight=25.0)
+    # lifting_object = RewTerm(func=so100_rewards.object_is_lifted, params={"minimal_height": 0.02}, weight=25.0)
+
+    # Reward for being close to the object
+    ee_close_to_object = RewTerm(func=so100_rewards.ee_close_to_object, params={"std": 0.05, "threshold": 0.05}, weight=25.0)
 
     # Action penalty to encourage smooth movements
-    action_rate = RewTerm(func=mdp.action_rate_l2, weight=-1e-4)
+    # action_rate = RewTerm(func=mdp.action_rate_l2, weight=-1e-4)
 
     # Joint velocity penalty to prevent erratic movements
-    joint_vel = RewTerm(
-        func=mdp.joint_vel_l2,
-        weight=-1e-4,
-        params={"asset_cfg": SceneEntityCfg("robot")},
-    )
+    # joint_vel = RewTerm(
+    #     func=mdp.joint_vel_l2,
+    #     weight=-1e-4,
+    #     params={"asset_cfg": SceneEntityCfg("robot")},
+    # )
 
 
 @configclass
@@ -158,13 +161,15 @@ class TerminationsCfg:
 
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
 
-    object_dropping = DoneTerm(
-        func=mdp.root_height_below_minimum, params={"minimum_height": -0.05, "asset_cfg": SceneEntityCfg("object")}
-    )
+    # object_dropping = DoneTerm(
+    #     func=mdp.root_height_below_minimum, params={"minimum_height": -0.05, "asset_cfg": SceneEntityCfg("object")}
+    # )
+
+    object_reached = DoneTerm(func=so100_terminations.ee_close_to_object_termination, params={"std": 0.05, "threshold": 0.05})
 
 
 # @configclass
-class CurriculumCfg:
+# class CurriculumCfg:
 #     """Curriculum terms for the MDP."""
 
 #     # Stage 1: Focus on reaching
@@ -181,17 +186,17 @@ class CurriculumCfg:
 #         params={"term_name": "lifting_object", "weight": 35.0, "num_steps": 8000}
 #     )
 
-    # Stage 4: Stabilize the policy
-    # Gradually increase action penalties to encourage smoother, more stable movements
-    action_rate = CurrTerm(
-        func=mdp.modify_reward_weight, 
-        params={"term_name": "action_rate", "weight": -5e-4, "num_steps": 12000}
-    )
+    # # Stage 4: Stabilize the policy
+    # # Gradually increase action penalties to encourage smoother, more stable movements
+    # action_rate = CurrTerm(
+    #     func=mdp.modify_reward_weight, 
+    #     params={"term_name": "action_rate", "weight": -5e-4, "num_steps": 12000}
+    # )
 
-    joint_vel = CurrTerm(
-        func=mdp.modify_reward_weight, 
-        params={"term_name": "joint_vel", "weight": -5e-4, "num_steps": 12000}
-    )
+    # joint_vel = CurrTerm(
+    #     func=mdp.modify_reward_weight, 
+    #     params={"term_name": "joint_vel", "weight": -5e-4, "num_steps": 12000}
+    # )
 
 
 ##
@@ -204,7 +209,7 @@ class SO100LiftEnvCfg(ManagerBasedRLEnvCfg):
     """Configuration for the lifting environment."""
 
     # Scene settings
-    scene: SO100SceneCfg = SO100SceneCfg(num_envs=4, env_spacing=2.5)
+    scene: SO100SceneCfg = SO100SceneCfg(num_envs=4, env_spacing=1.0)
     # Basic settings
     observations: ObservationsCfg = ObservationsCfg()
     actions: ActionsCfg = ActionsCfg()
@@ -213,7 +218,7 @@ class SO100LiftEnvCfg(ManagerBasedRLEnvCfg):
     rewards: RewardsCfg = RewardsCfg()
     terminations: TerminationsCfg = TerminationsCfg()
     events: EventCfg = EventCfg()
-    curriculum: CurriculumCfg = CurriculumCfg()
+    # curriculum: CurriculumCfg = CurriculumCfg()
 
     def __post_init__(self):
         """Post initialization."""
@@ -299,7 +304,7 @@ def main():
             obs = env.step(joint_efforts)
             # print current orientation of pole
             print("[Env 0]: obs: ", obs[0]["policy"])
-            print("[Env 0] reward:", obs[1].item())
+            print("[Env 0] reward:", obs[1])
             # update counter
             count += 1
 

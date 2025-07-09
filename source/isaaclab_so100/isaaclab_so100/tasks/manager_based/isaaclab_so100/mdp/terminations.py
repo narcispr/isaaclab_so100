@@ -17,9 +17,22 @@ from typing import TYPE_CHECKING
 from isaaclab.assets import RigidObject
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.utils.math import combine_frame_transforms
+from isaaclab_so100.tasks.manager_based.isaaclab_so100.mdp import rewards
 
 if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedRLEnv
+
+
+def ee_close_to_object_termination(
+    env: ManagerBasedRLEnv, std: float, threshold: float = 0.02
+) -> torch.Tensor:
+    """
+    Computes a reward based on the distance from the end-effector to the object.
+    If the distance is below the threshold, it returns a positive reward.
+    """
+    distance = -rewards.ee_to_object_distance(env, std)
+    print(f"If distance {distance} is below threshold {threshold}, then return True")
+    return torch.where(distance < threshold, True, False)
 
 
 def object_reached_goal(
