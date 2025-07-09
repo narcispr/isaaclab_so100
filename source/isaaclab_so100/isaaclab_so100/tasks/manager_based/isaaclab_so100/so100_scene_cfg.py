@@ -52,7 +52,7 @@ class SO100SceneCfg(InteractiveSceneCfg):
     )
 
     # Add a frame transformer to visualize the robot's end-effector frame
-    frame_transformer = FrameTransformerCfg(
+    ee_frame = FrameTransformerCfg(
         prim_path="{ENV_REGEX_NS}/Robot/Base",  # the source frame (world in this case)
         target_frames=[
             FrameTransformerCfg.FrameCfg(
