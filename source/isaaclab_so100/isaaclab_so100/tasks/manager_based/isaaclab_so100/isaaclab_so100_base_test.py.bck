@@ -1,3 +1,35 @@
+# Copyright (c) 2022-2025, The Isaac Lab Project Developers (https://github.com/isaac-sim/IsaacLab/blob/main/CONTRIBUTORS.md).
+# All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+import argparse
+import dataclasses
+
+from isaaclab.app import AppLauncher
+
+# add argparse arguments
+parser = argparse.ArgumentParser(
+    description="This script demonstrates adding a custom robot to an Isaac Lab environment."
+)
+parser.add_argument("--num_envs", type=int, default=1, help="Number of environments to spawn.")
+# append AppLauncher cli args
+AppLauncher.add_app_launcher_args(parser)
+# parse the arguments
+args_cli = parser.parse_args()
+
+# launch omniverse app
+app_launcher = AppLauncher(args_cli)
+simulation_app = app_launcher.app
+
+
+
+# ^  ^  ^
+# |  |  |
+#  REMOVE
+
+
+
 # Copyright (c) 2022-2025, The Isaac Lab Project Developers.
 # All rights reserved.
 #
@@ -239,13 +271,49 @@ class SO100CubeLiftEnvCfg(SO100LiftEnvCfg):
         self.commands.object_pose.debug_vis = False
 
         
-@configclass
-class SO100CubeLiftEnvCfg_PLAY(SO100CubeLiftEnvCfg):
-    def __post_init__(self):
-        # post init of parent
-        super().__post_init__()
-        # make a smaller scene for play
-        self.scene.num_envs = 64
-        self.scene.env_spacing = 1.0
-        # disable randomization for play
-        self.observations.policy.enable_corruption = False
+
+def main():
+    """Main function."""
+    
+    print("Starting SO100 Lift Environment...")
+
+    # parse the arguments
+    env_cfg = SO100CubeLiftEnvCfg()
+    env_cfg.scene.num_envs = args_cli.num_envs
+    env_cfg.sim.device = args_cli.device
+    # setup base environment
+    env = ManagerBasedRLEnv(env_cfg)
+    
+    # simulate physics
+    count = 0
+
+    while simulation_app.is_running():
+        with torch.inference_mode():
+            # reset
+            if count % 300 == 0:
+                count = 0
+                env.reset()
+                print("-" * 80)
+                print("[INFO]: Resetting environment...")
+            # sample random actions
+            joint_efforts = torch.randn_like(env.action_manager.action)
+            # step the environment
+            # print joint efforts
+            joint_efforts = torch.tensor([[2.0, 0, 0, 0, 0, 0.0]], device="cuda:0")
+            print("[Env 0]: joint_efforts: ", joint_efforts[0])
+            obs = env.step(joint_efforts)
+            # print current orientation of pole
+            print("[Env 0]: obs: ", obs[0]["policy"])
+            print("[Env 0] reward:", obs[1])
+            # update counter
+            count += 1
+
+    # close the environment
+    env.close()
+
+if __name__ == "__main__":
+    # run the main function
+    print("Running main...")
+    main()
+    # close sim app
+    simulation_app.close()

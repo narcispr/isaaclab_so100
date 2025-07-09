@@ -40,7 +40,6 @@ def ee_to_object_distance(env: ManagerBasedRLEnv, std: float) -> torch.Tensor:
 
     # Compute Euclidean distance
     distance = torch.norm(ee_pos - object_pos, dim=-1)  # shape: (num_envs,)
-    print(f"EE to Object Distance: {distance}")
     # return 1 - torch.tanh(distance / std)
     return -distance
 

@@ -31,7 +31,7 @@ def ee_close_to_object_termination(
     If the distance is below the threshold, it returns a positive reward.
     """
     distance = -rewards.ee_to_object_distance(env, std)
-    print(f"If distance {distance} is below threshold {threshold}, then return True")
+    # print(f"If distance {distance} is below threshold {threshold}, then return True")
     return torch.where(distance < threshold, True, False)
 
 
