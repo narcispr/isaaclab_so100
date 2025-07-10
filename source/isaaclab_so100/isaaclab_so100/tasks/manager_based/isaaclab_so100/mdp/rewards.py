@@ -26,6 +26,15 @@ def object_is_lifted(
     return torch.where(object.data.root_pos_w[:, 2] > minimal_height, 1.0, 0.0)
 
 
+
+def object_lifted_distance(
+    env: ManagerBasedRLEnv, object_cfg: SceneEntityCfg = SceneEntityCfg("object")
+) -> torch.Tensor:
+    """Reward the agent for lifting the object above the minimal height."""
+    object: RigidObject = env.scene[object_cfg.name]
+    return object.data.root_pos_w[:, 2]
+
+
 def ee_to_object_distance(env: ManagerBasedRLEnv, std: float) -> torch.Tensor:
     """
     Computes the Euclidean distance from the gripper (end-effector) to the object,

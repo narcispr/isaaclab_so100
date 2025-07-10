@@ -21,13 +21,41 @@ app_launcher = AppLauncher(args_cli)
 simulation_app = app_launcher.app
 
 
+
+# -----------------------------------------------
+# Configure rendering
+import carb
+
+# Ensure RTX Real-Time is active
+settings = carb.settings.get_settings()
+
+# Enable RTX real-time ray tracing
+settings.set("/rtx/rayTracedLighting/enabled", True)
+
+# Use OptiX denoiser
+settings.set("/rtx/denoiser/enable", True)
+settings.set("/rtx/denoiser/optix/enabled", True)
+settings.set("/rtx/denoiser/optix/useDenoiser", True)
+
+# Set accumulation frames to reduce noise
+settings.set("/rtx/rayTracedLighting/accumulation/frames", 32)
+
+# Optional: improve anti-aliasing (e.g., enable TAA)
+settings.set("/rtx/post/aa/enableTAA", True)
+# -----------------------------------------------
+
+
+
 from isaaclab_so100.tasks.manager_based.isaaclab_so100.isaaclab_so100_touch_cube_env import SO100TouchCubeEnvCfg
+from isaaclab_so100.tasks.manager_based.isaaclab_so100.isaaclab_so100_lift_cube_env import SO100LiftCubeEnvCfg
+
 from isaaclab.envs import ManagerBasedRLEnv
 from isaaclab_rl.skrl import SkrlVecEnvWrapper
 from skrl.utils.runner.torch import Runner
 
 if __name__ == "__main__":
-    env_cfg = SO100TouchCubeEnvCfg()
+    # env_cfg = SO100TouchCubeEnvCfg()
+    env_cfg = SO100LiftCubeEnvCfg()
     env_cfg.scene.num_envs = args_cli.num_envs
     env_cfg.sim.device = args_cli.device
     # setup base environment
@@ -41,7 +69,7 @@ if __name__ == "__main__":
     
     runner = Runner(env, cfg)
 
-    runner.agent.load("/home/narcis/SOARM100/isaaclab_so100/scripts/skrl/so100_touch_object_PPO/25-07-09_15-39-16-292674_PPO/checkpoints/best_agent.pt")
+    runner.agent.load("/home/narcis/SOARM100/isaaclab_so100/scripts/skrl/so100_lift_cube_PPO/25-07-10_13-54-34-535122_PPO/checkpoints/best_agent.pt")
     # set agent to evaluation mode
     runner.agent.set_running_mode("eval")
 
