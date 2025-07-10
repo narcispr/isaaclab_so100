@@ -21,27 +21,30 @@ app_launcher = AppLauncher(args_cli)
 simulation_app = app_launcher.app
 
 
+# 🔁 Let the app run 1 tick to finish initializing
+simulation_app.update()
 
 # -----------------------------------------------
 # Configure rendering
 import carb
 
-# Ensure RTX Real-Time is active
 settings = carb.settings.get_settings()
 
-# Enable RTX real-time ray tracing
+# 🔁 Switch to RTX Path Traced renderer
+settings.set("/app/renderer", "RayTracedPathTracing")  # or just "PathTracing" in some versions
+
+# ✅ Enable Path Tracing rendering
+settings.set("/rtx/pathtraced/enabled", True)
+
+# 🎯 Set samples per pixel to 2
+settings.set("/rtx/pathtraced/spp", 2)
+
+# (Optional) Disable denoisers meant for real-time
+settings.set("/rtx/denoiser/enable", True)
 settings.set("/rtx/rayTracedLighting/enabled", True)
 
-# Use OptiX denoiser
-settings.set("/rtx/denoiser/enable", True)
-settings.set("/rtx/denoiser/optix/enabled", True)
-settings.set("/rtx/denoiser/optix/useDenoiser", True)
-
-# Set accumulation frames to reduce noise
-settings.set("/rtx/rayTracedLighting/accumulation/frames", 32)
-
-# Optional: improve anti-aliasing (e.g., enable TAA)
-settings.set("/rtx/post/aa/enableTAA", True)
+# (Optional) Anti-aliasing – often not needed with path tracing
+settings.set("/rtx/post/aa/enableTAA", False)
 # -----------------------------------------------
 
 
@@ -69,7 +72,7 @@ if __name__ == "__main__":
     
     runner = Runner(env, cfg)
 
-    runner.agent.load("/home/narcis/SOARM100/isaaclab_so100/scripts/skrl/so100_lift_cube_PPO/25-07-10_13-54-34-535122_PPO/checkpoints/best_agent.pt")
+    runner.agent.load("/home/narcis/SOARM100/isaaclab_so100/scripts/skrl/so100_lift_cube_PPO/25-07-10_14-41-33-203367_PPO/checkpoints/best_agent.pt")
     # set agent to evaluation mode
     runner.agent.set_running_mode("eval")
 
