@@ -12,12 +12,12 @@ from . import agents
 ##
 
 
-gym.register(
-    id="Template-Isaaclab-So100-v0",
-    entry_point="isaaclab.envs:ManagerBasedRLEnv",
-    disable_env_checker=True,
-    kwargs={
-        "env_cfg_entry_point": f"{__name__}.isaaclab_so100_env_cfg:IsaaclabSo100EnvCfg",
-        "skrl_cfg_entry_point": f"{agents.__name__}:skrl_ppo_cfg.yaml",
-    },
-)
+# gym.register(
+#     id="Template-Isaaclab-So100-v0",
+#     entry_point="isaaclab.envs:ManagerBasedRLEnv",
+#     disable_env_checker=True,
+#     kwargs={
+#         "env_cfg_entry_point": f"{__name__}.isaaclab_so100_touch_cube:IsaaclabSo100EnvCfg",
+#         "skrl_cfg_entry_point": f"{agents.__name__}:skrl_ppo_cfg.yaml",
+#     },
+# )

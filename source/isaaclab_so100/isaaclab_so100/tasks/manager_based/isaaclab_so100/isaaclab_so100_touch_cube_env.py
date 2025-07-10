@@ -173,7 +173,7 @@ class TerminationsCfg:
 
 
 @configclass
-class SO100LiftEnvCfg(ManagerBasedRLEnvCfg):
+class SO100TouchCubeEnvCfg(ManagerBasedRLEnvCfg):
     """Configuration for the lifting environment."""
 
     # Scene settings
@@ -181,7 +181,28 @@ class SO100LiftEnvCfg(ManagerBasedRLEnvCfg):
     # Basic settings
     observations: ObservationsCfg = ObservationsCfg()
     actions: ActionsCfg = ActionsCfg()
+    # Set actions for the specific robot type (SO100)
+    actions.arm_action = mdp.JointPositionActionCfg(
+        asset_name="robot",
+        joint_names=["Shoulder_Rotation", "Shoulder_Pitch", "Elbow", "Wrist_Pitch", "Wrist_Roll"],
+        scale=0.5,
+        use_default_offset=True
+    )
+    
+    # Set gripper action with wider range for better visibility
+    actions.gripper_action = mdp.BinaryJointPositionActionCfg(
+        asset_name="robot",
+        joint_names=["Gripper"],
+        open_command_expr={"Gripper": 0.5},  # Fully open
+        close_command_expr={"Gripper": 0.0}  # flly closed
+    )
+    
     commands: CommandsCfg = CommandsCfg()
+    # Set the body name for the end effector
+    commands.object_pose.body_name = "Fixed_Gripper"
+    # Disable debug visualization for the target pose command
+    commands.object_pose.debug_vis = False
+    
     # MDP settings
     rewards: RewardsCfg = RewardsCfg()
     terminations: TerminationsCfg = TerminationsCfg()
@@ -208,39 +229,9 @@ class SO100LiftEnvCfg(ManagerBasedRLEnvCfg):
         self.viewer.lookat = (0.5, 0.0, 0.2)
         self.viewer.origin_type = "env"
         self.viewer.env_index = 0
-
-
-
-@configclass
-class SO100CubeLiftEnvCfg(SO100LiftEnvCfg):
-    def __post_init__(self):
-        # post init of parent
-        super().__post_init__()
-
-        # Set actions for the specific robot type (SO100)
-        self.actions.arm_action = mdp.JointPositionActionCfg(
-            asset_name="robot",
-            joint_names=["Shoulder_Rotation", "Shoulder_Pitch", "Elbow", "Wrist_Pitch", "Wrist_Roll"],
-            scale=0.5,
-            use_default_offset=True
-        )
-        
-        # Set gripper action with wider range for better visibility
-        self.actions.gripper_action = mdp.BinaryJointPositionActionCfg(
-            asset_name="robot",
-            joint_names=["Gripper"],
-            open_command_expr={"Gripper": 0.5},  # Fully open
-            close_command_expr={"Gripper": 0.0}  # flly closed
-        )
-        
-        # Set the body name for the end effector
-        self.commands.object_pose.body_name = "Fixed_Gripper"
-        # Disable debug visualization for the target pose command
-        self.commands.object_pose.debug_vis = False
-
         
 @configclass
-class SO100CubeLiftEnvCfg_PLAY(SO100CubeLiftEnvCfg):
+class SO100CubeLiftEnvCfg_PLAY(SO100TouchCubeEnvCfg):
     def __post_init__(self):
         # post init of parent
         super().__post_init__()
