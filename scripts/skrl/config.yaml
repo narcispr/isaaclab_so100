@@ -66,7 +66,7 @@ agent:
   time_limit_bootstrap: False
   # logging and checkpoint
   experiment:
-    directory: "so100_lift_cube_PPO"
+    directory: "so100_valve_PPO"
     experiment_name: ""
     write_interval: 500
     checkpoint_interval: auto

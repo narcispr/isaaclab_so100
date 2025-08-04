@@ -31,21 +31,23 @@ simulation_app = app_launcher.app
 
 import gymnasium as gym
 import torch
+from isaaclab_so100.tasks.manager_based.isaaclab_so100.isaaclab_so100_valve_env import SO100ValveEnvCfg
+
+
 
 import isaaclab_tasks  # noqa: F401
 from isaaclab_tasks.utils import parse_env_cfg
-
-# import isaaclab_so100.tasks  # noqa: F401
+from isaaclab.envs import ManagerBasedRLEnv
 
 
 def main():
     """Random actions agent with Isaac Lab environment."""
     # create environment configuration
-    env_cfg = parse_env_cfg(
-        args_cli.task, device=args_cli.device, num_envs=args_cli.num_envs, use_fabric=not args_cli.disable_fabric
-    )
-    # create environment
-    env = gym.make(args_cli.task, cfg=env_cfg)
+    env_cfg = SO100ValveEnvCfg()
+    env_cfg.scene.num_envs = 1
+    env_cfg.sim.device = args_cli.device
+    # setup base environment
+    env = ManagerBasedRLEnv(env_cfg)
 
     # print info (this is vectorized environment)
     print(f"[INFO]: Gym observation space: {env.observation_space}")
@@ -59,8 +61,9 @@ def main():
             # sample actions from -1 to 1
             actions = 2 * torch.rand(env.action_space.shape, device=env.unwrapped.device) - 1
             # apply actions
-            env.step(actions)
-
+            obs = env.step(actions)
+            # print observations
+            print(f"[INFO]: Observations: {obs}")
     # close the simulator
     env.close()
 
