@@ -5,18 +5,18 @@
   <link name="valve_base">
     <visual>
       <geometry>
-        <cylinder length="0.10" radius="0.02"/>
+        <cylinder length="0.05" radius="0.02"/>
       </geometry>
-      <origin xyz="0 0 0.05" rpy="0 0 0"/>
+      <origin xyz="0 0 0.025" rpy="0 0 0"/>
        <material name="gray">
             <color rgba="0.5 0.5 0.5 1"/>
         </material>
     </visual>
     <collision>
       <geometry>
-        <cylinder length="0.10" radius="0.02"/>
+        <cylinder length="0.05" radius="0.02"/>
       </geometry>
-      <origin xyz="0 0 0.05" rpy="0 0 0"/>
+      <origin xyz="0 0 0.025" rpy="0 0 0"/>
     </collision>
     <inertial>
       <mass value="0.2"/>
@@ -24,9 +24,75 @@
       <origin xyz="0 0 0.05"/>
     </inertial>
   </link>
-
-  <!-- HANDLE: CROSS MADE OF TWO BOXES -->
+  <!-- HANDLE: CROSS MADE OF TWO CYLINDERS -->
   <link name="valve_handle">
+    <visual>
+      <geometry>
+        <cylinder length="0.20" radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="0 1.5708 0"/>
+      <material name="red">
+         <color rgba="1 0 0 1"/>
+      </material>
+    </visual>
+    <visual>
+      <geometry>
+        <cylinder length="0.20" radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+      <material name="red">
+        <color rgba="1 0 0 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.20" radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="0 1.5708 0"/>
+    </collision>
+    <collision>
+      <geometry>
+        <cylinder length="0.20" radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+    </collision>
+    <inertial>
+      <mass value="0.1"/>
+      <inertia ixx="0.0001" iyy="0.0001" izz="0.0001" ixy="0.0" ixz="0.0" iyz="0.0"/>
+      <origin xyz="0 0 0"/>
+    </inertial>
+  </link>
+
+  <!-- CENTRAL VERTICAL CYLINDER UNDER HANDLE CROSS -->
+  <link name="valve_vertical_cylinder">
+    <visual>
+      <geometry>
+        <cylinder length="0.05" radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0 -0.025" rpy="0 0 0"/>
+      <material name="gray">
+        <color rgba="0.5 0.5 0.5 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.05" radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0 -0.025" rpy="0 0 0"/>
+    </collision>
+    <inertial>
+      <mass value="0.05"/>
+      <inertia ixx="0.00002" iyy="0.00002" izz="0.00002" ixy="0.0" ixz="0.0" iyz="0.0"/>
+      <origin xyz="0 0 -0.025"/>
+    </inertial>
+  </link>
+  <joint name="vertical_cylinder_joint" type="fixed">
+    <parent link="valve_handle"/>
+    <child link="valve_vertical_cylinder"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+  <!-- HANDLE: CROSS MADE OF TWO BOXES -->
+  <!--link name="valve_handle">
     <visual>
       <geometry>
         <box size="0.20 0.02 0.02"/>
@@ -62,7 +128,123 @@
       <inertia ixx="0.0001" iyy="0.0001" izz="0.0001" ixy="0.0" ixz="0.0" iyz="0.0"/>
       <origin xyz="0 0 0"/>
     </inertial>
+  </link-->
+
+  <!-- SPHERE 1: End of first box (positive x) -->
+  <link name="sphere_1">
+    <visual>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0.05 0 0" rpy="0 0 0"/>
+      <material name="blue">
+        <color rgba="0 0 1 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0.05 0 0"/>
+    </collision>
+    <inertial>
+      <mass value="0.01"/>
+      <inertia ixx="0.00001" iyy="0.00001" izz="0.00001" ixy="0.0" ixz="0.0" iyz="0.0"/>
+      <origin xyz="0.05 0 0"/>
+    </inertial>
   </link>
+  <joint name="sphere_1_joint" type="fixed">
+    <parent link="valve_handle"/>
+    <child link="sphere_1"/>
+    <origin xyz="0.05 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <!-- SPHERE 2: End of first box (negative x) -->
+  <link name="sphere_2">
+    <visual>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="-0.05 0 0" rpy="0 0 0"/>
+      <material name="blue">
+        <color rgba="0 0 1 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="-0.05 0 0"/>
+    </collision>
+    <inertial>
+      <mass value="0.01"/>
+      <inertia ixx="0.00001" iyy="0.00001" izz="0.00001" ixy="0.0" ixz="0.0" iyz="0.0"/>
+      <origin xyz="-0.05 0 0"/>
+    </inertial>
+  </link>
+  <joint name="sphere_2_joint" type="fixed">
+    <parent link="valve_handle"/>
+    <child link="sphere_2"/>
+    <origin xyz="-0.05 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <!-- SPHERE 3: End of second box (positive y) -->
+  <link name="sphere_3">
+    <visual>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0.05 0" rpy="0 0 0"/>
+      <material name="blue">
+        <color rgba="0 0 1 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0.05 0"/>
+    </collision>
+    <inertial>
+      <mass value="0.01"/>
+      <inertia ixx="0.00001" iyy="0.00001" izz="0.00001" ixy="0.0" ixz="0.0" iyz="0.0"/>
+      <origin xyz="0 0.05 0"/>
+    </inertial>
+  </link>
+  <joint name="sphere_3_joint" type="fixed">
+    <parent link="valve_handle"/>
+    <child link="sphere_3"/>
+    <origin xyz="0 0.05 0" rpy="0 0 0"/>
+  </joint>
+
+  <!-- SPHERE 4: End of second box (negative y) -->
+  <link name="sphere_4">
+    <visual>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 -0.05 0" rpy="0 0 0"/>
+      <material name="blue">
+        <color rgba="0 0 1 1"/>
+      </material>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 -0.05 0"/>
+    </collision>
+    <inertial>
+      <mass value="0.01"/>
+      <inertia ixx="0.00001" iyy="0.00001" izz="0.00001" ixy="0.0" ixz="0.0" iyz="0.0"/>
+      <origin xyz="0 -0.05 0"/>
+    </inertial>
+  </link>
+  <joint name="sphere_4_joint" type="fixed">
+    <parent link="valve_handle"/>
+    <child link="sphere_4"/>
+    <origin xyz="0 -0.05 0" rpy="0 0 0"/>
+  </joint>
 
   <!-- JOINT: REVOLUTE WITH LIMITS -->
   <joint name="valve_joint" type="revolute">
