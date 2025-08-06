@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING
 
 from isaaclab.assets import RigidObject
 from isaaclab.managers import SceneEntityCfg
+from isaaclab.sensors import FrameTransformer
 from isaaclab.utils.math import combine_frame_transforms
 from isaaclab_so100.tasks.manager_based.isaaclab_so100.mdp import rewards
 
@@ -72,3 +73,26 @@ def object_is_lifted(
     object: RigidObject = env.scene[object_cfg.name]
     return torch.where(object.data.root_pos_w[:, 2] > minimal_height, True, False)
 
+def valve_rotated_past_threshold(
+    env: ManagerBasedRLEnv,
+    angle_threshold: float = 0.785,  # 45 degrees in radians
+    handle_frame_cfg: SceneEntityCfg = SceneEntityCfg("handle_frame"),
+) -> torch.Tensor:
+    """Terminate when the valve has been rotated past a certain threshold from its initial position."""
+    handle_frame: FrameTransformer = env.scene[handle_frame_cfg.name]
+    quat = handle_frame.data.target_quat_source[:, 0, :]
+
+    # Convert quaternion to yaw angle
+    z = quat[:, 2]
+    w = quat[:, 3]
+    current_yaw = 2.0 * torch.atan2(z, w)
+
+    # Initialize initial_yaw at the first step if it doesn't exist
+    if not hasattr(env, "initial_handle_yaw"):
+        env.initial_handle_yaw = current_yaw.clone()
+
+    # Calculate the absolute difference in yaw from the initial position
+    delta_yaw = torch.abs(current_yaw - env.initial_handle_yaw)
+
+    # Terminate if the rotation exceeds the threshold
+    return delta_yaw > angle_threshold

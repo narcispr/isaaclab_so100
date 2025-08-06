@@ -97,6 +97,29 @@ def handle_rotation(
 
     return delta_rot
     
+def gripper_to_closest_handle_end_distance(env: ManagerBasedRLEnv) -> torch.Tensor:
+    """Computes the distance from the gripper to the closest handle end."""
+    # Get gripper position in robot base frame (x, y, z)
+    gripper_pose = observations.gripper_position_in_robot_base(env)
+    gripper_pos = gripper_pose[:, :3]  # Shape: (num_envs, 3)
+
+    # Get handle ends positions in robot base frame
+    # This returns a flat tensor of shape (num_envs, 12)
+    handle_ends_flat = observations.handle_ends_positions_in_robot_base(env)
+    # Reshape to (num_envs, 4, 3) to work with the 4 points
+    handle_ends_pos = handle_ends_flat.view(env.num_envs, 4, 3)
+
+    # Calculate the distance from the gripper to each of the 4 handle ends
+    # gripper_pos needs to be unsqueezed to be broadcastable with handle_ends_pos
+    # gripper_pos shape: (num_envs, 3) -> (num_envs, 1, 3)
+    # handle_ends_pos shape: (num_envs, 4, 3)
+    # The subtraction will be broadcasted, resulting shape: (num_envs, 4, 3)
+    distances = torch.norm(handle_ends_pos - gripper_pos.unsqueeze(1), dim=-1) # Shape: (num_envs, 4)
+
+    # Find the minimum distance for each environment
+    min_distance, _ = torch.min(distances, dim=-1) # Shape: (num_envs,)
+
+    return min_distance
 
 # def object_ee_distance(
 #     env: ManagerBasedRLEnv,

@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 
 from isaaclab.assets import RigidObject
 from isaaclab.managers import SceneEntityCfg
-from isaaclab.utils.math import subtract_frame_transforms, quat_apply
+from isaaclab.utils.math import subtract_frame_transforms, quat_apply, quat_inv
 from isaaclab.sensors.frame_transformer import FrameTransformer
 if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedRLEnv
@@ -55,8 +55,8 @@ def handle_ends_positions_in_robot_base(env: ManagerBasedRLEnv) -> torch.Tensor:
     handle_pos_w = handle_frame.data.target_pos_w[:, 0, :]
     handle_quat_w = handle_frame.data.target_quat_w[:, 0, :]
 
-    # Define the local offsets from the handle's center based on the URDF
-    # The handle is 0.20m long, so the ends are at +/- 0.10m
+    # Define the local offsets from the handle's center based on the URDF.
+    # These are the same for all environments, so we create one tensor and broadcast.
     device = env.device
     offsets = torch.tensor(
         [
@@ -66,13 +66,17 @@ def handle_ends_positions_in_robot_base(env: ManagerBasedRLEnv) -> torch.Tensor:
             [0.0, -0.1, 0.0],
         ],
         device=device,
-    )
-    # We need to replicate the offsets for each environment
-    num_envs = env.num_envs
-    offsets = offsets.repeat(num_envs, 1, 1)  # Shape: (num_envs, 4, 3)
+    ).unsqueeze(0)  # Shape: (1, 4, 3)
 
-    # Rotate the local offsets by the handle's orientation
-    rotated_offsets = quat_apply(handle_quat_w.unsqueeze(1), offsets)
+    # Rotate the local offsets by the handle's orientation.
+    # We need to manually broadcast the tensors to the same batch dimensions before calling quat_apply.
+    num_envs = handle_quat_w.shape[0]
+    # Broadcast offsets tensor from (1, 4, 3) to (num_envs, 4, 3)
+    offsets_expanded = offsets.expand(num_envs, -1, -1)
+    # Broadcast quaternion tensor from (num_envs, 1, 4) to (num_envs, 4, 4)
+    quat_expanded = handle_quat_w.unsqueeze(1).expand(-1, 4, -1)
+    # Apply rotation
+    rotated_offsets = quat_apply(quat_expanded, offsets_expanded)
 
     # Add the rotated offsets to the handle's world position
     # to get the world positions of the ends
@@ -80,11 +84,17 @@ def handle_ends_positions_in_robot_base(env: ManagerBasedRLEnv) -> torch.Tensor:
 
     # Transform the world positions of the ends into the robot's base frame
     robot: RigidObject = env.scene["robot"]
-    ends_pos_b, _ = subtract_frame_transforms(
-        robot.data.root_state_w[:, :3].unsqueeze(1),
-        robot.data.root_state_w[:, 3:7].unsqueeze(1),
-        ends_pos_w,
-    )
+    robot_pos_w = robot.data.root_pos_w
+    robot_quat_w = robot.data.root_quat_w
+    
+    # Vector from robot base to handle ends in world frame
+    vec_w = ends_pos_w - robot_pos_w.unsqueeze(1)
+    
+    # Rotate vector into robot's base frame
+    robot_quat_inv_w = quat_inv(robot_quat_w)
+    # Shape: (num_envs, 1, 4) -> (num_envs, 4, 4)
+    quat_for_apply = robot_quat_inv_w.unsqueeze(1).repeat(1, 4, 1)
+    ends_pos_b = quat_apply(quat_for_apply, vec_w)
 
     # Reshape to a flat tensor for the observation
-    return ends_pos_b.reshape(num_envs, -1) 
+    return ends_pos_b.reshape(env.num_envs, -1) 

@@ -22,6 +22,7 @@ from isaaclab_so100.tasks.manager_based.isaaclab_so100.so100_valve_scene_cfg imp
 import isaaclab_so100.tasks.manager_based.isaaclab_so100.mdp.observations as so100_observations
 import isaaclab_so100.tasks.manager_based.isaaclab_so100.mdp.rewards as so100_rewards
 import isaaclab_so100.tasks.manager_based.isaaclab_so100.mdp.terminations as so100_terminations
+import isaaclab_so100.tasks.manager_based.isaaclab_so100.mdp.events as so100_events
 
 ##
 # Scene definition
@@ -99,37 +100,34 @@ class EventCfg:
             "velocity_range": (0.0, 0.0),
         },
     )
+    # store the initial valve angle on reset
+    reset_valve_angle = EventTerm(
+        func=so100_events.reset_initial_valve_angle,
+        mode="reset",
+        params={"handle_frame_cfg": SceneEntityCfg("handle_frame")},
+    )
 
 @configclass
 class RewardsCfg:
     """Reward terms for the MDP."""
 
-    # Reaching reward
+    # Stage 1: Reaching reward to encourage the agent to move towards the handle
+    reaching_handle = RewTerm(func=so100_rewards.gripper_to_closest_handle_end_distance, weight=-1.0)
+
+    # Stage 2: Rotation reward, initialized to 0 and ramped up by the curriculum
     rotate_handle = RewTerm(
         func=so100_rewards.handle_rotation,
         params={"handle_frame_cfg": SceneEntityCfg("handle_frame")},
-        weight=100.0
+        weight=0.0
     )
-    reaching_object = RewTerm(func=so100_rewards.ee_to_object_distance, params={"std": 0.05, "object_cfg":SceneEntityCfg("valve")}, weight=1.0)
 
-    # Lifting reward
-    # lifting_object = RewTerm(func=so100_rewards.object_lifted_distance, weight=1.0)
-
-    # Hight Reward to reaching desired height
-    # object_is_lifted = RewTerm(func=so100_rewards.object_is_lifted, params={"minimal_height": 0.2}, weight=100.0)
-
-    # Reward for being close to the object
-    # ee_close_to_object = RewTerm(func=so100_rewards.ee_close_to_object, params={"std": 0.05, "threshold": 0.02}, weight=25.0)
-
-    # Action penalty to encourage smooth movements
-    # action_rate = RewTerm(func=mdp.action_rate_l2, weight=-1e-4)
-
-    # Joint velocity penalty to prevent erratic movements
-    # joint_vel = RewTerm(
-    #     func=mdp.joint_vel_l2,
-    #     weight=-1e-4,
-    #     params={"asset_cfg": SceneEntityCfg("robot")},
-    # )
+    # Stage 3: Penalties for smooth movements, initialized to 0 and ramped up by the curriculum
+    action_rate = RewTerm(func=mdp.action_rate_l2, weight=0.0)
+    joint_vel = RewTerm(
+        func=mdp.joint_vel_l2,
+        weight=0.0,
+        params={"asset_cfg": SceneEntityCfg("robot")},
+    )
 
 
 @configclass
@@ -137,43 +135,27 @@ class TerminationsCfg:
     """Termination terms for the MDP."""
 
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
+    # valve_rotated = DoneTerm(func=so100_terminations.valve_rotated_past_threshold)
 
-    # object_dropping = DoneTerm(
-    #     func=mdp.root_height_below_minimum, params={"minimum_height": -0.05, "asset_cfg": SceneEntityCfg("object")}
-    # )
+@configclass
+class CurriculumCfg:
+    """Curriculum terms for the MDP."""
 
-    # object_reached = DoneTerm(func=so100_terminations.ee_close_to_object_termination, params={"std": 0.05, "threshold": 0.025})
-    # object_lifted = DoneTerm(func=so100_terminations.object_is_lifted, params={"minimal_height": 0.2, "object_cfg": SceneEntityCfg("object")})
+    # Stage 2: After 40000 steps, ramp up the rotation reward from 0.0 to 100.0
+    rotate_handle_curriculum = CurrTerm(
+        func=mdp.modify_reward_weight,
+        params={"term_name": "rotate_handle", "weight": 100.0, "num_steps": 40000}
+    )
 
-# @configclass
-# class CurriculumCfg:
-#     """Curriculum terms for the MDP."""
-
-#     # Stage 1: Focus on reaching
-#     # Start with higher reaching reward, then gradually decrease it
-#     reaching_reward = CurrTerm(
-#         func=mdp.modify_reward_weight, 
-#         params={"term_name": "reaching_object", "weight": 1.0, "num_steps": 6000}
-#     )
-
-#     # Stage 2: Transition to lifting
-#     # Start with lower lifting reward, gradually increase to encourage lifting behavior
-#     lifting_reward = CurrTerm(
-#         func=mdp.modify_reward_weight, 
-#         params={"term_name": "lifting_object", "weight": 35.0, "num_steps": 8000}
-#     )
-
-    # # Stage 4: Stabilize the policy
-    # # Gradually increase action penalties to encourage smoother, more stable movements
-    # action_rate = CurrTerm(
-    #     func=mdp.modify_reward_weight, 
-    #     params={"term_name": "action_rate", "weight": -5e-4, "num_steps": 12000}
-    # )
-
-    # joint_vel = CurrTerm(
-    #     func=mdp.modify_reward_weight, 
-    #     params={"term_name": "joint_vel", "weight": -5e-4, "num_steps": 12000}
-    # )
+    # Stage 3: After 80000 steps, ramp up the action penalties to encourage smooth movements
+    action_rate_curriculum = CurrTerm(
+        func=mdp.modify_reward_weight,
+        params={"term_name": "action_rate", "weight": -1e-4, "num_steps": 80000}
+    )
+    joint_vel_curriculum = CurrTerm(
+        func=mdp.modify_reward_weight,
+        params={"term_name": "joint_vel", "weight": -1e-4, "num_steps": 80000}
+    )
 
 
 ##
@@ -216,7 +198,7 @@ class SO100ValveEnvCfg(ManagerBasedRLEnvCfg):
     rewards: RewardsCfg = RewardsCfg()
     terminations: TerminationsCfg = TerminationsCfg()
     events: EventCfg = EventCfg()
-    # curriculum: CurriculumCfg = CurriculumCfg()
+    curriculum: CurriculumCfg = CurriculumCfg()
 
     def __post_init__(self):
         """Post initialization."""
