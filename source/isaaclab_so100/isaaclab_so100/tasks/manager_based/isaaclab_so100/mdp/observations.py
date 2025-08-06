@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 
 from isaaclab.assets import RigidObject
 from isaaclab.managers import SceneEntityCfg
-from isaaclab.utils.math import subtract_frame_transforms, quat_rotate
+from isaaclab.utils.math import subtract_frame_transforms, quat_apply
 from isaaclab.sensors.frame_transformer import FrameTransformer
 if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedRLEnv
@@ -72,7 +72,7 @@ def handle_ends_positions_in_robot_base(env: ManagerBasedRLEnv) -> torch.Tensor:
     offsets = offsets.repeat(num_envs, 1, 1)  # Shape: (num_envs, 4, 3)
 
     # Rotate the local offsets by the handle's orientation
-    rotated_offsets = quat_rotate(handle_quat_w.unsqueeze(1), offsets)
+    rotated_offsets = quat_apply(handle_quat_w.unsqueeze(1), offsets)
 
     # Add the rotated offsets to the handle's world position
     # to get the world positions of the ends
