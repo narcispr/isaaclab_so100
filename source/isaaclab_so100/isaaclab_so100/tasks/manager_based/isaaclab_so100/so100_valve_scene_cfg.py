@@ -48,14 +48,14 @@ class SO100ValveSceneCfg(InteractiveSceneCfg):
         prim_path="{ENV_REGEX_NS}/Robot/Base",  # the source frame (world in this case)
         target_frames=[
             FrameTransformerCfg.FrameCfg(
-                prim_path="{ENV_REGEX_NS}/Robot/Fixed_Gripper",
-                name="gripper",
-                offset=OffsetCfg(pos=(0.01, -0.0, 0.1), rot=(1.0, 0.0, 0.0, 0.0)),
-            ),
-            FrameTransformerCfg.FrameCfg(
                 prim_path="{ENV_REGEX_NS}/Valve/Valve/valve_base",
                 name="base",
                 offset=OffsetCfg(pos=(0.00, 0.0, 0.1), rot=(1.0, 0.0, 0.0, 0.0)),
+            ),
+            FrameTransformerCfg.FrameCfg(
+                prim_path="{ENV_REGEX_NS}/Robot/Fixed_Gripper",
+                name="gripper",
+                offset=OffsetCfg(pos=(0.01, -0.0, 0.1), rot=(1.0, 0.0, 0.0, 0.0)),
             )
         ],
         update_period=0.0,
@@ -75,3 +75,4 @@ class SO100ValveSceneCfg(InteractiveSceneCfg):
         update_period=0.0,
         debug_vis=False,  # still draw visuals
     )
+

@@ -11,7 +11,6 @@ from typing import TYPE_CHECKING
 from isaaclab.assets import RigidObject
 from isaaclab.managers import SceneEntityCfg
 from isaaclab.sensors import FrameTransformer
-from isaaclab.utils.math import combine_frame_transforms
 from isaaclab_so100.tasks.manager_based.isaaclab_so100.mdp import observations
 
 if TYPE_CHECKING:
@@ -35,7 +34,7 @@ def object_lifted_distance(
     return object.data.root_pos_w[:, 2]
 
 
-def ee_to_object_distance(env: ManagerBasedRLEnv, std: float) -> torch.Tensor:
+def ee_to_object_distance(env: ManagerBasedRLEnv, std: float, object_cfg: SceneEntityCfg = SceneEntityCfg("object")) -> torch.Tensor:
     """
     Computes the Euclidean distance from the gripper (end-effector) to the object,
     both expressed in the robot's base frame.
@@ -45,7 +44,7 @@ def ee_to_object_distance(env: ManagerBasedRLEnv, std: float) -> torch.Tensor:
     ee_pos = ee_pose[:, :3]  # Extract position (x, y, z)
 
     # Get object position in robot base frame
-    object_pos = observations.object_position_in_robot_root_frame(env)
+    object_pos = observations.object_position_in_robot_root_frame(env, object_cfg=object_cfg)
 
     # Compute Euclidean distance
     distance = torch.norm(ee_pos - object_pos, dim=-1)  # shape: (num_envs,)
@@ -61,6 +60,43 @@ def ee_close_to_object(
     """
     distance = -ee_to_object_distance(env, std)
     return torch.where(distance < threshold, 1.0, 0.0)
+
+def handle_rotation(
+    env: ManagerBasedRLEnv,
+    handle_frame_cfg: SceneEntityCfg = SceneEntityCfg("handle_frame"),
+) -> torch.Tensor:
+    """Computes the change in rotation of the handle since the last step.
+
+    This reward is designed to encourage the agent to continuously rotate the valve
+    in a positive direction. It tracks the change in the rotation angle from the previous
+    step, rewarding positive changes and penalizing negative changes.
+    """
+    handle_frame: FrameTransformer = env.scene[handle_frame_cfg.name]
+    quat = handle_frame.data.target_quat_source[:, 0, :]  # (num_envs, 4) --> Quaternion
+
+    # Convert quaternion to rotation angle
+    z = quat[:, 2]
+    w = quat[:, 3]
+
+    current_rot = 2.0 * torch.atan2(z, w)  # shape: (num_envs,)
+
+    # initialize previous rotation at the first step
+    if not hasattr(env, "previous_handle_rot"):
+        env.previous_handle_rot = current_rot.clone()
+
+    # compute reward for rotations
+    # we use the previous step's rotation to compute the delta
+    delta_rot = current_rot - env.previous_handle_rot
+
+    # for envs that have just been reset, the reward is 0
+    # because there is no previous step in the same episode
+    delta_rot[env.reset_buf] = 0.0
+
+    # update previous rotation for the next step
+    env.previous_handle_rot = current_rot.clone()
+
+    return delta_rot
+    
 
 # def object_ee_distance(
 #     env: ManagerBasedRLEnv,

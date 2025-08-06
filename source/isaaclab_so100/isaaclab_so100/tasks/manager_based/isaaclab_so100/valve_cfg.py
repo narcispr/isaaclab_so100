@@ -5,7 +5,7 @@ from isaaclab.assets.articulation import ArticulationCfg
 
 # Construct the absolute path to the USD file
 _THIS_DIR = os.path.dirname(os.path.abspath(__file__))
-VALVE_USD_PATH = os.path.join(_THIS_DIR, "asset", "valve.usd")
+VALVE_USD_PATH = os.path.join(_THIS_DIR, "asset", "valve2.usd")
 
 # Create Articulation configuration for the valve
 VALVE_CFG = ArticulationCfg(
