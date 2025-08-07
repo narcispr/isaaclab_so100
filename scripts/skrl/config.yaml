@@ -15,7 +15,7 @@ models:
     network:
       - name: net
         input: STATES
-        layers: [32, 32]
+        layers: [128, 128]
         activations: elu
     output: ACTIONS
   value:  # see deterministic_model parameters
@@ -24,7 +24,7 @@ models:
     network:
       - name: net
         input: STATES
-        layers: [32, 32]
+        layers: [128, 128]
         activations: elu
     output: ONE
 
@@ -40,7 +40,7 @@ memory:
 # https://skrl.readthedocs.io/en/latest/api/agents/ppo.html
 agent:
   class: PPO
-  rollouts: 32
+  rollouts: 256
   learning_epochs: 8
   mini_batches: 8
   discount_factor: 0.99
@@ -59,7 +59,7 @@ agent:
   ratio_clip: 0.2
   value_clip: 0.2
   clip_predicted_values: True
-  entropy_loss_scale: 0.0
+  entropy_loss_scale: 0.002
   value_loss_scale: 2.0
   kl_threshold: 0.0
   rewards_shaper_scale: 0.1
@@ -76,5 +76,5 @@ agent:
 # https://skrl.readthedocs.io/en/latest/api/trainers/sequential.html
 trainer:
   class: SequentialTrainer
-  timesteps: 200000
+  timesteps: 1000000
   environment_info: log
