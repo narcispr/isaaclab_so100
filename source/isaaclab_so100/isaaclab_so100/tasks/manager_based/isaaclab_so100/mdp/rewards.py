@@ -79,101 +79,32 @@ def handle_rotation(
     w = quat[:, 3]
 
     current_rot = 2.0 * torch.atan2(z, w)  # shape: (num_envs,)
-
+    
     # initialize previous rotation at the first step
-    if not hasattr(env, "previous_handle_rot"):
-        env.previous_handle_rot = current_rot.clone()
+    if not hasattr(env, "initial_handle_yaw"):
+        print("ERROR! Initial handle yaw not set!")
+        env.initial_handle_yaw = current_rot.clone()
 
     # compute reward for rotations
-    # we use the previous step's rotation to compute the delta
-    delta_rot = current_rot - env.previous_handle_rot
+    # we use the initial step's rotation to compute the delta
+    delta_rot = current_rot - env.initial_handle_yaw
+    print(f"[INFO] Current rotation: {current_rot}, previous rotation: {env.initial_handle_yaw}, Delta rotation: {delta_rot}")
+    # update the initial rotation for the next step
+    env.initial_handle_yaw = current_rot.clone()
 
-    # for envs that have just been reset, the reward is 0
-    # because there is no previous step in the same episode
-    delta_rot[env.reset_buf] = 0.0
-
-    # update previous rotation for the next step
-    env.previous_handle_rot = current_rot.clone()
-
-    return delta_rot
+    return torch.abs(delta_rot)
     
 def gripper_to_closest_handle_end_distance(env: ManagerBasedRLEnv) -> torch.Tensor:
     """Computes the distance from the gripper to the closest handle end."""
-    # Get gripper position in robot base frame (x, y, z)
-    gripper_pose = observations.gripper_position_in_robot_base(env)
-    gripper_pos = gripper_pose[:, :3]  # Shape: (num_envs, 3)
-
-    # Get handle ends positions in robot base frame
-    # This returns a flat tensor of shape (num_envs, 12)
-    handle_ends_flat = observations.handle_ends_positions_in_robot_base(env)
-    # Reshape to (num_envs, 4, 3) to work with the 4 points
+    # The observation function now gives us the positions relative to the gripper.
+    # The gripper is at (0,0,0) in its own frame, so the distance is just the norm.
+    handle_ends_flat = observations.handle_ends_positions_in_gripper_frame(env)
     handle_ends_pos = handle_ends_flat.view(env.num_envs, 4, 3)
 
-    # Calculate the distance from the gripper to each of the 4 handle ends
-    # gripper_pos needs to be unsqueezed to be broadcastable with handle_ends_pos
-    # gripper_pos shape: (num_envs, 3) -> (num_envs, 1, 3)
-    # handle_ends_pos shape: (num_envs, 4, 3)
-    # The subtraction will be broadcasted, resulting shape: (num_envs, 4, 3)
-    distances = torch.norm(handle_ends_pos - gripper_pos.unsqueeze(1), dim=-1) # Shape: (num_envs, 4)
+    # Calculate the norm of each vector (which is the distance from the origin/gripper)
+    distances = torch.norm(handle_ends_pos, dim=-1) # Shape: (num_envs, 4)
 
     # Find the minimum distance for each environment
     min_distance, _ = torch.min(distances, dim=-1) # Shape: (num_envs,)
 
     return min_distance
-
-# def object_ee_distance(
-#     env: ManagerBasedRLEnv,
-#     std: float,
-#     object_cfg: SceneEntityCfg = SceneEntityCfg("object"),
-#     ee_frame_cfg: SceneEntityCfg = SceneEntityCfg("ee_frame"),
-# ) -> torch.Tensor:
-#     """Reward the agent for reaching the object using tanh-kernel."""
-#     # extract the used quantities (to enable type-hinting)
-#     object: RigidObject = env.scene[object_cfg.name]
-#     ee_frame: FrameTransformer = env.scene[ee_frame_cfg.name]
-#     # Target object position: (num_envs, 3)
-#     cube_pos_w = object.data.root_pos_w
-#     # End-effector position: (num_envs, 3)
-#     ee_w = ee_frame.data.target_pos_w[..., 0, :]
-#     # Distance of the end-effector to the object: (num_envs,)
-#     object_ee_distance = torch.norm(cube_pos_w - ee_w, dim=1)
-
-#     return 1 - torch.tanh(object_ee_distance / std)
-
-
-# def object_goal_distance(
-#     env: ManagerBasedRLEnv,
-#     std: float,
-#     minimal_height: float,
-#     command_name: str,
-#     robot_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
-#     object_cfg: SceneEntityCfg = SceneEntityCfg("object"),
-# ) -> torch.Tensor:
-#     """Reward the agent for tracking the goal pose using tanh-kernel."""
-#     # extract the used quantities (to enable type-hinting)
-#     robot: RigidObject = env.scene[robot_cfg.name]
-#     object: RigidObject = env.scene[object_cfg.name]
-#     command = env.command_manager.get_command(command_name)
-#     # compute the desired position in the world frame
-#     des_pos_b = command[:, :3]
-#     des_pos_w, _ = combine_frame_transforms(robot.data.root_state_w[:, :3], robot.data.root_state_w[:, 3:7], des_pos_b)
-#     # distance of the end-effector to the object: (num_envs,)
-#     distance = torch.norm(des_pos_w - object.data.root_pos_w[:, :3], dim=1)
-#     # rewarded if the object is lifted above the threshold
-#     return (object.data.root_pos_w[:, 2] > minimal_height) * (1 - torch.tanh(distance / std))
-
-
-# def object_ee_distance_and_lifted(
-#     env: ManagerBasedRLEnv,
-#     std: float,
-#     minimal_height: float,
-#     object_cfg: SceneEntityCfg = SceneEntityCfg("object"),
-#     ee_frame_cfg: SceneEntityCfg = SceneEntityCfg("ee_frame"),
-# ) -> torch.Tensor:
-#     """Combined reward for reaching the object AND lifting it."""
-#     # Get reaching reward
-#     reach_reward = object_ee_distance(env, std, object_cfg, ee_frame_cfg)
-#     # Get lifting reward
-#     lift_reward = object_is_lifted(env, minimal_height, object_cfg)
-#     # Combine rewards multiplicatively
-#     return reach_reward * lift_reward

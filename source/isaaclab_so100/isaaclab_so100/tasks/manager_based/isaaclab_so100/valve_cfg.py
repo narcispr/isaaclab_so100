@@ -19,21 +19,23 @@ VALVE_CFG = ArticulationCfg(
         articulation_props=sim_utils.ArticulationRootPropertiesCfg(
             enabled_self_collisions=False,
             solver_position_iteration_count=4,
-            solver_velocity_iteration_count=0,
+            solver_velocity_iteration_count=1,
         ),
         
     ),
     init_state=ArticulationCfg.InitialStateCfg(
-        joint_pos={"valve_joint": 0.0},    # Start at closed position
-        joint_vel={"valve_joint": 0.0},
+        joint_pos={"valve_joint": 0.0, "handle_end_x_neg": 0, "handle_end_x_pos": 0, "handle_end_y_neg": 0, "handle_end_y_pos": 0},    # Start at closed position
+        joint_vel={"valve_joint": 0.0, "handle_end_x_neg": 0, "handle_end_x_pos": 0, "handle_end_y_neg": 0, "handle_end_y_pos": 0},
+
+
     ),
     actuators={
         "valve_handle_actuator": ImplicitActuatorCfg(
-            joint_names_expr=["valve_joint"],
-            effort_limit=2.0,
+            joint_names_expr=["valve_joint", "joint_x_neg", "joint_x_pos", "joint_y_neg", "joint_y_pos"],
+            effort_limit_sim=2.0,
             velocity_limit_sim=1.5,
-            stiffness=10.0,    # Light spring-like return
-            damping=2.0,       # Simulate joint friction
+            stiffness=0.0,    # Light spring-like return
+            damping=0.0,       # Simulate joint friction
         ),
     },
     soft_joint_pos_limit_factor=1.0,

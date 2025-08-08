@@ -76,6 +76,16 @@
         <color rgba="0 0 1 1"/>
       </material>
     </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </collision>
+    <inertial>
+      <mass value="0.01"/>
+      <inertia ixx="0.00002" ixy="0.00001" ixz="0.00001" iyy="0.00002" iyz="0.00001" izz="0.00002"/>
+    </inertial>
   </link>
 
   <!-- X- -->
@@ -89,6 +99,16 @@
         <color rgba="0 0 1 1"/>
       </material>
     </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </collision>
+    <inertial>
+      <mass value="0.01"/>
+           <inertia ixx="0.00002" ixy="0.00001" ixz="0.00001" iyy="0.00002" iyz="0.00001" izz="0.00002"/>
+    </inertial>
   </link>
 
   <!-- Y+ -->
@@ -102,6 +122,16 @@
         <color rgba="0 0 1 1"/>
       </material>
     </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </collision>
+    <inertial>
+      <mass value="0.01"/>
+      <inertia ixx="0.00002" ixy="0.00001" ixz="0.00001" iyy="0.00002" iyz="0.00001" izz="0.00002"/>
+    </inertial>
   </link>
 
   <!-- Y- -->
@@ -115,31 +145,53 @@
         <color rgba="0 0 1 1"/>
       </material>
     </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.01"/>
+      </geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </collision>
+    <inertial>
+      <mass value="0.01"/>
+      <inertia ixx="0.00002" ixy="0.00001" ixz="0.00001" iyy="0.00002" iyz="0.00001" izz="0.00002"/>
+    </inertial>
   </link>
 
   <!-- JOINTS TO SPHERES -->
-  <joint name="joint_x_pos" type="fixed">
+  <joint name="joint_x_pos" type="revolute">
     <parent link="valve_handle"/>
     <child link="handle_end_x_pos"/>
     <origin xyz="0.10 0 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="0" upper="0.01" effort="5" velocity="1"/>
+    <dynamics damping="0.05" friction="0.1"/>
   </joint>
 
-  <joint name="joint_x_neg" type="fixed">
+  <joint name="joint_x_neg" type="revolute">
     <parent link="valve_handle"/>
     <child link="handle_end_x_neg"/>
     <origin xyz="-0.10 0 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="0" upper="0.01" effort="5" velocity="1"/>
+    <dynamics damping="0.05" friction="0.1"/>
   </joint>
 
-  <joint name="joint_y_pos" type="fixed">
+  <joint name="joint_y_pos" type="revolute">
     <parent link="valve_handle"/>
     <child link="handle_end_y_pos"/>
     <origin xyz="0 0.10 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="0" upper="0.01" effort="5" velocity="1"/>
+    <dynamics damping="0.05" friction="0.1"/>
   </joint>
 
-  <joint name="joint_y_neg" type="fixed">
+  <joint name="joint_y_neg" type="revolute">
     <parent link="valve_handle"/>
     <child link="handle_end_y_neg"/>
     <origin xyz="0 -0.10 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="0" upper="0.01" effort="5" velocity="1"/>
+    <dynamics damping="0.05" friction="0.1"/>
   </joint>
 
   <!-- JOINT: REVOLUTE -->

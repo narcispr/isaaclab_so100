@@ -62,9 +62,7 @@ class ObservationsCfg:
         """Observations for policy group."""
 
         joint_pos = ObsTerm(func=mdp.joint_pos_rel)
-        gripper_pos = ObsTerm(func=so100_observations.gripper_position_in_robot_base)
-        # joint_vel = ObsTerm(func=mdp.joint_vel_rel)
-        handle_ends_positions = ObsTerm(func=so100_observations.handle_ends_positions_in_robot_base)
+        handle_ends_positions = ObsTerm(func=so100_observations.handle_ends_positions_in_gripper_frame)
         actions = ObsTerm(func=mdp.last_action)
 
         def __post_init__(self):
@@ -84,9 +82,20 @@ class EventCfg:
         func=mdp.reset_root_state_uniform,
         mode="reset",
         params={
-            "pose_range": {"x": (-0.1, 0.1), "y": (-0.05, 0.05), "z": (0.0, 0.0), "yaw": (-3.14159, 3.14159)},
+            "pose_range": {"x": (-0.1, 0.1), "y": (-0.25, -0.3), "z": (0.0, 0.0), "yaw": (-0.76, 0.76)},
             "velocity_range": {},
             "asset_cfg": SceneEntityCfg("valve"),
+        },
+    )
+
+    # reset the valve's joints to a random position
+    reset_robot_joints = EventTerm(
+        func=mdp.reset_joints_by_offset,
+        mode="reset",
+        params={
+            "asset_cfg": SceneEntityCfg("valve_joint"),
+            "position_range": (-0.2, 0.2),
+            "velocity_range": (0.0, 0.0),
         },
     )
 
@@ -104,7 +113,6 @@ class EventCfg:
     reset_valve_angle = EventTerm(
         func=so100_events.reset_initial_valve_angle,
         mode="reset",
-        params={"handle_frame_cfg": SceneEntityCfg("handle_frame")},
     )
 
 @configclass
@@ -118,7 +126,7 @@ class RewardsCfg:
     rotate_handle = RewTerm(
         func=so100_rewards.handle_rotation,
         params={"handle_frame_cfg": SceneEntityCfg("handle_frame")},
-        weight=0.0
+        weight=0.1
     )
 
     # Stage 3: Penalties for smooth movements, initialized to 0 and ramped up by the curriculum
@@ -129,25 +137,25 @@ class RewardsCfg:
         params={"asset_cfg": SceneEntityCfg("robot")},
     )
 
-
 @configclass
 class TerminationsCfg:
     """Termination terms for the MDP."""
 
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
+    # gripper_close_to_handle = DoneTerm(func=so100_terminations.gripper_close_to_any_handle_end, params={"threshold": 0.05})
     # valve_rotated = DoneTerm(func=so100_terminations.valve_rotated_past_threshold)
 
 @configclass
 class CurriculumCfg:
     """Curriculum terms for the MDP."""
 
-    # Stage 2: After 40000 steps, ramp up the rotation reward from 0.0 to 100.0
+    # Stage 2: After N steps, ramp up the rotation reward from 0.0 to 100.0
     rotate_handle_curriculum = CurrTerm(
         func=mdp.modify_reward_weight,
-        params={"term_name": "rotate_handle", "weight": 100.0, "num_steps": 40000}
+        params={"term_name": "rotate_handle", "weight": 0.5, "num_steps": 10000}
     )
 
-    # Stage 3: After 80000 steps, ramp up the action penalties to encourage smooth movements
+    # Stage 3: After N steps, ramp up the action penalties to encourage movements
     action_rate_curriculum = CurrTerm(
         func=mdp.modify_reward_weight,
         params={"term_name": "action_rate", "weight": -1e-4, "num_steps": 80000}
@@ -204,7 +212,7 @@ class SO100ValveEnvCfg(ManagerBasedRLEnvCfg):
         """Post initialization."""
         # general settings
         self.decimation = 2
-        self.episode_length_s = 4.0
+        self.episode_length_s = 20.0
         # simulation settings
         self.sim.dt = 0.01  # 100Hz
         self.sim.render_interval = self.decimation

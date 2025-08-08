@@ -55,7 +55,7 @@ SO100_CFG = ArticulationCfg(
         # Shoulder rotation moves: ALL mass (~0.8kg total)
         "shoulder_rotation": ImplicitActuatorCfg(
             joint_names_expr=["Shoulder_Rotation"],
-            effort_limit=1.9,
+            effort_limit_sim=1.9,
             velocity_limit_sim=1.5,
             stiffness=200.0,    # Highest - moves all mass
             damping=80.0,
@@ -63,7 +63,7 @@ SO100_CFG = ArticulationCfg(
         # Shoulder pitch moves: Everything except base (~0.65kg)
         "shoulder_pitch": ImplicitActuatorCfg(
             joint_names_expr=["Shoulder_Pitch"],
-            effort_limit=1.9,
+            effort_limit_sim=1.9,
             velocity_limit_sim=1.5,
             stiffness=170.0,    # Slightly less than rotation
             damping=65.0,
@@ -71,7 +71,7 @@ SO100_CFG = ArticulationCfg(
         # Elbow moves: Lower arm, wrist, gripper (~0.38kg)
         "elbow": ImplicitActuatorCfg(
             joint_names_expr=["Elbow"],
-            effort_limit=1.9,
+            effort_limit_sim=1.9,
             velocity_limit_sim=1.5,
             stiffness=120.0,    # Reduced based on less mass
             damping=45.0,
@@ -79,7 +79,7 @@ SO100_CFG = ArticulationCfg(
         # Wrist pitch moves: Wrist and gripper (~0.24kg)
         "wrist_pitch": ImplicitActuatorCfg(
             joint_names_expr=["Wrist_Pitch"],
-            effort_limit=1.9,
+            effort_limit_sim=1.9,
             velocity_limit_sim=1.5,
             stiffness=80.0,     # Reduced for less mass
             damping=30.0,
@@ -87,7 +87,7 @@ SO100_CFG = ArticulationCfg(
         # Wrist roll moves: Gripper assembly (~0.14kg)
         "wrist_roll": ImplicitActuatorCfg(
             joint_names_expr=["Wrist_Roll"],
-            effort_limit=1.9,
+            effort_limit_sim=1.9,
             velocity_limit_sim=1.5,
             stiffness=50.0,     # Low mass to move
             damping=20.0,
@@ -95,7 +95,7 @@ SO100_CFG = ArticulationCfg(
         # Gripper moves: Only moving jaw (~0.034kg)
         "gripper": ImplicitActuatorCfg(
             joint_names_expr=["Gripper"],
-            effort_limit=2.5,    # Increased from 1.9 to 2.5 for stronger grip
+            effort_limit_sim=2.5,    # Increased from 1.9 to 2.5 for stronger grip
             velocity_limit_sim=1.5,
             stiffness=60.0,     # Increased from 25.0 to 60.0 for more reliable closing
             damping=20.0,       # Increased from 10.0 to 20.0 for stability

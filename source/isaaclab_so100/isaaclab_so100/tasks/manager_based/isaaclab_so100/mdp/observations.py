@@ -4,97 +4,19 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 from __future__ import annotations
-
 import torch
 from typing import TYPE_CHECKING
 
-from isaaclab.assets import RigidObject
-from isaaclab.managers import SceneEntityCfg
-from isaaclab.utils.math import subtract_frame_transforms, quat_apply, quat_inv
-from isaaclab.sensors.frame_transformer import FrameTransformer
+from isaaclab.sensors import FrameTransformer
+
 if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedRLEnv
 
 
-def object_position_in_robot_root_frame(
-    env: ManagerBasedRLEnv,
-    robot_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
-    object_cfg: SceneEntityCfg = SceneEntityCfg("object"),) -> torch.Tensor:
-    
-    """The position of the object in the robot's root frame."""
-    robot: RigidObject = env.scene[robot_cfg.name]
-    object: RigidObject = env.scene[object_cfg.name]
-
-    # computes the position of the object relative to the robot’s base, by 
-    # subtracting the robot’s position/orientation from the object’s world position.
-    object_pos_b, _ = subtract_frame_transforms(
-        robot.data.root_state_w[:, :3], 
-        robot.data.root_state_w[:, 3:7], 
-        object.data.root_pos_w[:, :3]
-    )
-    return object_pos_b
-
-
-def gripper_position_in_robot_base(
-    env: ManagerBasedRLEnv
-) -> torch.Tensor:
-    """
-    Returns the position of the gripper relative to the robot's base frame.
-    """
-    frame_transformer: FrameTransformer = env.scene["ee_frame"]
-
-    p = frame_transformer.data.target_pos_source[:, 1, :]  # (num_envs, 3) --> Index 1 is the gripper frame
-    quat = frame_transformer.data.target_quat_source[:, 1, :]
-
-    return torch.cat([p, quat], dim=-1)  # (num_envs, 7) --> Position + Quaternion 
-
-def handle_ends_positions_in_robot_base(env: ManagerBasedRLEnv) -> torch.Tensor:
-    """The positions of the four handle ends, transformed into the robot's base frame."""
-    # Get the pose of the handle's center in the world frame
-    handle_frame: FrameTransformer = env.scene["handle_frame"]
-    handle_pos_w = handle_frame.data.target_pos_w[:, 0, :]
-    handle_quat_w = handle_frame.data.target_quat_w[:, 0, :]
-
-    # Define the local offsets from the handle's center based on the URDF.
-    # These are the same for all environments, so we create one tensor and broadcast.
-    device = env.device
-    offsets = torch.tensor(
-        [
-            [0.1, 0.0, 0.0],
-            [-0.1, 0.0, 0.0],
-            [0.0, 0.1, 0.0],
-            [0.0, -0.1, 0.0],
-        ],
-        device=device,
-    ).unsqueeze(0)  # Shape: (1, 4, 3)
-
-    # Rotate the local offsets by the handle's orientation.
-    # We need to manually broadcast the tensors to the same batch dimensions before calling quat_apply.
-    num_envs = handle_quat_w.shape[0]
-    # Broadcast offsets tensor from (1, 4, 3) to (num_envs, 4, 3)
-    offsets_expanded = offsets.expand(num_envs, -1, -1)
-    # Broadcast quaternion tensor from (num_envs, 1, 4) to (num_envs, 4, 4)
-    quat_expanded = handle_quat_w.unsqueeze(1).expand(-1, 4, -1)
-    # Apply rotation
-    rotated_offsets = quat_apply(quat_expanded, offsets_expanded)
-
-    # Add the rotated offsets to the handle's world position
-    # to get the world positions of the ends
-    ends_pos_w = handle_pos_w.unsqueeze(1) + rotated_offsets
-
-    # Transform the world positions of the ends into the robot's base frame
-    robot: RigidObject = env.scene["robot"]
-    robot_pos_w = robot.data.root_pos_w
-    robot_quat_w = robot.data.root_quat_w
-    
-    # Vector from robot base to handle ends in world frame
-    vec_w = ends_pos_w - robot_pos_w.unsqueeze(1)
-    
-    # Rotate vector into robot's base frame
-    robot_quat_inv_w = quat_inv(robot_quat_w)
-    # Shape: (num_envs, 1, 4) -> (num_envs, 4, 4)
-    quat_for_apply = robot_quat_inv_w.unsqueeze(1).repeat(1, 4, 1)
-    ends_pos_b = quat_apply(quat_for_apply, vec_w)
-
-    # Reshape to a flat tensor for the observation
-    return ends_pos_b.reshape(env.num_envs, -1) 
+def handle_ends_positions_in_gripper_frame(env: ManagerBasedRLEnv) -> torch.Tensor:
+    """The positions of the four handle ends, relative to the gripper frame."""
+    # The FrameTransformer is configured to compute this directly
+    frame_transformer: FrameTransformer = env.scene["handle_ends_wrt_gripper"]
+    # The data is available in target_pos_source, which has shape (num_envs, num_targets, 3)
+    # We just need to flatten it for the observation vector
+    return frame_transformer.data.target_pos_source.view(env.num_envs, -1)

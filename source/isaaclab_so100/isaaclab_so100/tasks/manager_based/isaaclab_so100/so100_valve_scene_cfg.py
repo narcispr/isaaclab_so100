@@ -37,37 +37,29 @@ class SO100ValveSceneCfg(InteractiveSceneCfg):
     # valve
     valve: ArticulationCfg = VALVE_CFG.replace(prim_path="{ENV_REGEX_NS}/Valve",
                                                init_state=ArticulationCfg.InitialStateCfg(
-                                                    pos=(0.08, -0.3, 0.0),  # Initial position of the valve
+                                                    pos=(0.0, 0.0, 0.0),  # Initial position of the valve
                                                     rot=(1.0, 0.0, 0.0, 0.0)  # Initial orientation of the valve (identity quaternion)
                                                )
                                               )
     
     
-    # Add a frame transformer to indicate Gripper and Valve pose wrt robot base
-    ee_frame = FrameTransformerCfg(
-        prim_path="{ENV_REGEX_NS}/Robot/Base",  # the source frame (world in this case)
+    # Frame transformer to get the handle ends relative to the gripper
+    handle_ends_wrt_gripper = FrameTransformerCfg(
+        prim_path="{ENV_REGEX_NS}/Robot/Fixed_Gripper",
         target_frames=[
-            FrameTransformerCfg.FrameCfg(
-                prim_path="{ENV_REGEX_NS}/Valve/Valve/valve_base",
-                name="base",
-                offset=OffsetCfg(pos=(0.00, 0.0, 0.1), rot=(1.0, 0.0, 0.0, 0.0)),
-            ),
-            FrameTransformerCfg.FrameCfg(
-                prim_path="{ENV_REGEX_NS}/Robot/Fixed_Gripper",
-                name="gripper",
-                offset=OffsetCfg(pos=(0.01, -0.0, 0.1), rot=(1.0, 0.0, 0.0, 0.0)),
-            )
+            FrameTransformerCfg.FrameCfg(prim_path="{ENV_REGEX_NS}/Valve/valve/handle_end_x_pos"),
+            FrameTransformerCfg.FrameCfg(prim_path="{ENV_REGEX_NS}/Valve/valve/handle_end_x_neg"),
+            FrameTransformerCfg.FrameCfg(prim_path="{ENV_REGEX_NS}/Valve/valve/handle_end_y_pos"),
+            FrameTransformerCfg.FrameCfg(prim_path="{ENV_REGEX_NS}/Valve/valve/handle_end_y_neg"),
         ],
-        update_period=0.0,
-        debug_vis=False,  # still draw visuals
     )
 
     # Add a frame transformer to indicate Valve handle pose wrt valve base
     handle_frame = FrameTransformerCfg(
-        prim_path="{ENV_REGEX_NS}/Valve/Valve/valve_base",  # the source frame (world in this case)
+        prim_path="{ENV_REGEX_NS}/Valve/valve/valve_base",  # the source frame (world in this case)
         target_frames=[
             FrameTransformerCfg.FrameCfg(
-                prim_path="{ENV_REGEX_NS}/Valve/Valve/valve_handle",
+                prim_path="{ENV_REGEX_NS}/Valve/valve/valve_handle",
                 name="handle",
                 offset=OffsetCfg(pos=(0.0, 0.0, 0.0), rot=(1.0, 0.0, 0.0, 0.0)),
             )

@@ -44,7 +44,7 @@ def main():
     """Random actions agent with Isaac Lab environment."""
     # create environment configuration
     env_cfg = SO100ValveEnvCfg()
-    env_cfg.scene.num_envs = 4
+    env_cfg.scene.num_envs = 1
     env_cfg.sim.device = args_cli.device
     # setup base environment
     env = ManagerBasedRLEnv(env_cfg)
@@ -63,6 +63,7 @@ def main():
             # apply actions
             obs = env.step(actions)
             # print observations
+            print(f"Reward: {obs[1]}")
             # print(f"[INFO]: Observations: {obs}")
     # close the simulator
     env.close()
