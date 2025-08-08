@@ -46,11 +46,12 @@ def reset_initial_valve_angle(
     # handle_frame_cfg: SceneEntityCfg,
 ):
     
-    print("RESET!")
+    # print("RESET!")
     asset: Articulation = env.scene['valve']
     joint_pos = asset.data.default_joint_pos[env_ids].clone()
     joint_vel = asset.data.default_joint_vel[env_ids].clone()
     asset.write_joint_state_to_sim(joint_pos, joint_vel, env_ids=env_ids)
+    env.initial_handle_yaw = torch.zeros_like(joint_pos[:, 0])  # Initialize the initial yaw to zero for the reset environments
 
     """Stores the initial yaw of the valve handle at the start of the episode."""
     # handle_frame: FrameTransformer = env.scene[handle_frame_cfg.name]

@@ -73,12 +73,16 @@ def handle_rotation(
     """
     handle_frame: FrameTransformer = env.scene[handle_frame_cfg.name]
     quat = handle_frame.data.target_quat_source[:, 0, :]  # (num_envs, 4) --> Quaternion
-
+    # print the quaternion for debugging in a nice format (3 decimals)
+    # print(f"[DEBUG] Quaternion: {float(quat[:, 0]):.3f}, {float(quat[:, 1]):.3f}, {float(quat[:, 2]):.3f}, {float(quat[:, 3]):.3f}")
     # Convert quaternion to rotation angle
-    z = quat[:, 2]
-    w = quat[:, 3]
+    w = quat[:, 0]
+    z = quat[:, 3]
 
     current_rot = 2.0 * torch.atan2(z, w)  # shape: (num_envs,)
+    # Ensure the rotation is in the range [-pi, pi]
+    current_rot = torch.where(current_rot > torch.pi, current_rot - 2 * torch.pi, current_rot)
+    current_rot = torch.where(current_rot < -torch.pi, current_rot + 2 * torch.pi, current_rot)
     
     # initialize previous rotation at the first step
     if not hasattr(env, "initial_handle_yaw"):
@@ -88,11 +92,15 @@ def handle_rotation(
     # compute reward for rotations
     # we use the initial step's rotation to compute the delta
     delta_rot = current_rot - env.initial_handle_yaw
-    print(f"[INFO] Current rotation: {current_rot}, previous rotation: {env.initial_handle_yaw}, Delta rotation: {delta_rot}")
+    # Ensure the delta is in the range [-pi, pi]
+    delta_rot = torch.where(delta_rot > torch.pi, delta_rot - 2 * torch.pi, delta_rot)
+    delta_rot = torch.where(delta_rot < -torch.pi, delta_rot + 2 * torch.pi, delta_rot)
+    # print debug information
+    # print(f"[INFO] Current rotation: {current_rot}, previous rotation: {env.initial_handle_yaw}, Delta rotation: {delta_rot}")
     # update the initial rotation for the next step
     env.initial_handle_yaw = current_rot.clone()
 
-    return torch.abs(delta_rot)
+    return delta_rot
     
 def gripper_to_closest_handle_end_distance(env: ManagerBasedRLEnv) -> torch.Tensor:
     """Computes the distance from the gripper to the closest handle end."""

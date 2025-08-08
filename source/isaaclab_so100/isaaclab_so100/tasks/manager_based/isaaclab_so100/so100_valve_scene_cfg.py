@@ -65,6 +65,6 @@ class SO100ValveSceneCfg(InteractiveSceneCfg):
             )
         ],
         update_period=0.0,
-        debug_vis=False,  # still draw visuals
+        debug_vis=True,  # still draw visuals
     )
 
