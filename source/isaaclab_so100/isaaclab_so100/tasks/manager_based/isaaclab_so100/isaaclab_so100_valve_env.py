@@ -120,13 +120,13 @@ class RewardsCfg:
     """Reward terms for the MDP."""
 
     # Stage 1: Reaching reward to encourage the agent to move towards the handle
-    reaching_handle = RewTerm(func=so100_rewards.gripper_to_closest_handle_end_distance, weight=-1.0)
+    reaching_handle = RewTerm(func=so100_rewards.reaching_handle, weight=-1.0)
 
     # Stage 2: Rotation reward, initialized to 0 and ramped up by the curriculum
     rotate_handle = RewTerm(
         func=so100_rewards.handle_rotation,
         params={"handle_frame_cfg": SceneEntityCfg("handle_frame")},
-        weight=0.1
+        weight=0.0
     )
 
     # Stage 3: Penalties for smooth movements, initialized to 0 and ramped up by the curriculum
@@ -152,17 +152,22 @@ class CurriculumCfg:
     # Stage 2: After N steps, ramp up the rotation reward from 0.0 to 100.0
     rotate_handle_curriculum = CurrTerm(
         func=mdp.modify_reward_weight,
-        params={"term_name": "rotate_handle", "weight": 0.5, "num_steps": 10000}
+        params={"term_name": "rotate_handle", "weight": 100.0, "num_steps": 10000}
+    )
+
+    reaching_handle_curriculum = CurrTerm(
+        func=mdp.modify_reward_weight,
+        params={"term_name": "reaching_handle", "weight": 0.0, "num_steps": 10000}
     )
 
     # Stage 3: After N steps, ramp up the action penalties to encourage movements
     action_rate_curriculum = CurrTerm(
         func=mdp.modify_reward_weight,
-        params={"term_name": "action_rate", "weight": -1e-4, "num_steps": 80000}
+        params={"term_name": "action_rate", "weight": -1e-4, "num_steps": 100000}
     )
     joint_vel_curriculum = CurrTerm(
         func=mdp.modify_reward_weight,
-        params={"term_name": "joint_vel", "weight": -1e-4, "num_steps": 80000}
+        params={"term_name": "joint_vel", "weight": -1e-4, "num_steps": 100000}
     )
 
 
@@ -212,7 +217,7 @@ class SO100ValveEnvCfg(ManagerBasedRLEnvCfg):
         """Post initialization."""
         # general settings
         self.decimation = 2
-        self.episode_length_s = 5.0
+        self.episode_length_s = 6.0
         # simulation settings
         self.sim.dt = 0.01  # 100Hz
         self.sim.render_interval = self.decimation

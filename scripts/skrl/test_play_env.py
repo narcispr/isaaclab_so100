@@ -73,7 +73,7 @@ if __name__ == "__main__":
     
     runner = Runner(env, cfg)
 
-    runner.agent.load("/home/narcis/SOARM100/isaaclab_so100/scripts/skrl/so100_valve_PPO/25-08-08_11-19-11-801133_PPO/checkpoints/agent_500000.pt")
+    runner.agent.load("/home/narcis/SOARM100/isaaclab_so100/so100_valve_PPO/25-08-09_11-00-12-593376_PPO/checkpoints/agent_1000000.pt")
     # set agent to evaluation mode
     runner.agent.set_running_mode("eval")
 

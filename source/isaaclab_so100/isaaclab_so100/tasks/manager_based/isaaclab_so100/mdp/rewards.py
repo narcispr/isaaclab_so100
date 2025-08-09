@@ -61,6 +61,9 @@ def ee_close_to_object(
     distance = -ee_to_object_distance(env, std)
     return torch.where(distance < threshold, 1.0, 0.0)
 
+
+## REWARDS FOR VALVE ENVIRONMENT
+
 def handle_rotation(
     env: ManagerBasedRLEnv,
     handle_frame_cfg: SceneEntityCfg = SceneEntityCfg("handle_frame"),
@@ -102,7 +105,7 @@ def handle_rotation(
 
     return delta_rot
     
-def gripper_to_closest_handle_end_distance(env: ManagerBasedRLEnv) -> torch.Tensor:
+def reaching_handle(env: ManagerBasedRLEnv) -> torch.Tensor:
     """Computes the distance from the gripper to the closest handle end."""
     # The observation function now gives us the positions relative to the gripper.
     # The gripper is at (0,0,0) in its own frame, so the distance is just the norm.
